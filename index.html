@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#080c14">
+  <title>CA Study Command Centre & Revision Scheduler</title>
+  <style>
+    /* RESET & VARS */
+    :root {
+      --bg-main: #080c14;
+      --bg-card: #111827;
+      --bg-card-hover: #1f2937;
+      --bg-glass: rgba(17, 24, 39, 0.8);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: #38bdf8;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --p1-color: #38bdf8; /* Accounting - Cyan */
+      --p2-color: #fb7185; /* Law - Rose */
+      --p3-color: #a855f7; /* Quants - Purple */
+      --p4-color: #34d399; /* Economics - Emerald */
+      --accent-gold: #fbbf24;
+      --accent-danger: #f43f5e;
+      --accent-success: #10b981;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: 90px;
+      overflow-x: hidden;
+    }
+
+    /* HEADER */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg-glass);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 800; font-size: 18px;
+      box-shadow: 0 2px 10px rgba(56, 189, 248, 0.3);
+    }
+    .brand-title { font-size: 15px; font-weight: 800; line-height: 1.2; }
+    .brand-sub { font-size: 11px; color: var(--text-muted); }
+
+    .header-countdown {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-gold);
+    }
+
+    /* MAIN CONTAINER */
+    main {
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+      flex: 1;
+    }
+
+    /* TABS */
+    .tab-content { display: none; animation: fadeIn 0.2s ease-in-out; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* BOTTOM NAV */
+    nav.bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--bg-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-color);
+      display: flex; justify-content: space-around;
+      padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .nav-btn {
+      background: none; border: none;
+      color: var(--text-muted);
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: 11px; font-weight: 600;
+      padding: 6px 8px; min-width: 60px; min-height: 48px;
+      border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .nav-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .nav-btn.active { color: var(--p1-color); background: rgba(56, 189, 248, 0.08); }
+
+    /* CARDS */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px; margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    .card-title {
+      font-size: 15px; font-weight: 700; color: var(--text-main);
+      margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+    }
+
+    /* BADGES */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 12px;
+      font-size: 11px; font-weight: 700;
+    }
+    .badge-due { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .badge-overdue { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.4); }
+    .badge-pass { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+    .badge-stage { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.3); }
+
+    /* HERO PROGRESS */
+    .progress-hero {
+      display: flex; align-items: center; gap: 16px; padding: 16px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--border-color); border-radius: var(--radius-lg); margin-bottom: 16px;
+    }
+    .progress-ring-wrap { position: relative; width: 76px; height: 76px; flex-shrink: 0; }
+    .progress-ring-circle { transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.4s ease; }
+    .progress-ring-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 16px; font-weight: 800; }
+
+    /* REVISION ACTION BUTTONS */
+    .rev-btn-group { display: flex; gap: 6px; margin-top: 8px; }
+    .rev-btn {
+      flex: 1; padding: 8px; border-radius: var(--radius-sm); border: none;
+      font-size: 12px; font-weight: 700; cursor: pointer; min-height: 40px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      transition: opacity 0.2s ease;
+    }
+    .rev-btn:active { opacity: 0.8; }
+    .rev-btn-easy { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); }
+    .rev-btn-ok { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .rev-btn-hard { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(251, 113, 133, 0.4); }
+
+    /* SYLLABUS CARDS */
+    .filter-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+    .filter-scroll::-webkit-scrollbar { display: none; }
+    .pill-btn {
+      background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-muted);
+      padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; white-space: nowrap;
+      cursor: pointer; min-height: 38px; display: inline-flex; align-items: center;
+    }
+    .pill-btn.active { background: var(--p1-color); color: #080c14; border-color: var(--p1-color); }
+
+    .chapter-card {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md);
+      padding: 14px; margin-bottom: 12px;
+    }
+    .chapter-controls {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px; justify-content: space-between;
+      margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .status-select {
+      background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: var(--text-main);
+      padding: 6px 10px; border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; min-height: 36px; outline: none;
+    }
+
+    .star-rating { display: flex; gap: 2px; cursor: pointer; }
+    .star-icon { width: 18px; height: 18px; fill: none; stroke: var(--text-dim); stroke-width: 1.5; }
+    .star-icon.filled { fill: var(--accent-gold); stroke: var(--accent-gold); }
+
+    .notes-box { display: none; margin-top: 10px; width: 100%; }
+    .notes-box.open { display: block; }
+    .notes-textarea {
+      width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm); color: var(--text-main); padding: 8px; font-size: 12px; font-family: inherit;
+      resize: vertical; min-height: 60px; outline: none;
+    }
+
+    /* FORMS & BUTTONS */
+    .btn {
+      background: linear-gradient(135deg, #38bdf8, #0284c7); color: #fff; border: none;
+      padding: 10px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700;
+      cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      min-height: 44px; width: 100%; transition: opacity 0.2s ease;
+    }
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--border-color); }
+    .btn-danger { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+    .btn-sm { min-height: 32px; padding: 4px 10px; font-size: 11px; width: auto; }
+
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+    .form-input {
+      width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm); color: var(--text-main); padding: 10px 12px; font-size: 13px; outline: none; min-height: 44px;
+    }
+
+    /* MOCK ANALYZER TABLE */
+    .chapter-breakdown-row {
+      display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed; top: 60px; right: 16px; z-index: 1000;
+      background: #10b981; color: #fff; padding: 8px 16px; border-radius: 20px;
+      font-size: 12px; font-weight: 700; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      opacity: 0; transform: translateY(-10px); transition: all 0.3s ease; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000;
+      background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-content {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+      width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .empty-state { text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">CA</div>
+      <div>
+        <div class="brand-title">CA Command Centre</div>
+        <div class="brand-sub">Foundation Prep & Scheduler</div>
+      </div>
+    </div>
+    <div class="header-countdown" id="countdownWidget">⏳ <span id="daysLeftNum">--</span> Days</div>
+  </header>
+
+  <!-- TOAST -->
+  <div id="toast">Saved ✓</div>
+
+  <!-- MAIN BODY -->
+  <main>
+
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-content active">
+      
+      <!-- HERO WIDGET -->
+      <div class="progress-hero">
+        <div class="progress-ring-wrap">
+          <svg width="76" height="76">
+            <circle stroke="rgba(255,255,255,0.08)" stroke-width="7" fill="transparent" r="30" cx="38" cy="38"/>
+            <circle id="heroRingCircle" class="progress-ring-circle" stroke="#38bdf8" stroke-width="7" stroke-dasharray="188.4" stroke-dashoffset="188.4" stroke-linecap="round" fill="transparent" r="30" cx="38" cy="38"/>
+          </svg>
+          <div class="progress-ring-text" id="heroProgressPercent">0%</div>
+        </div>
+        <div>
+          <div style="font-size: 16px; font-weight: 800;" id="studentGreeting">Hello, Aspirant!</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;"><span id="masteredChapterCount">0</span> / <span id="totalChapterCount">0</span> Mastered</div>
+          <div id="dueTodayBadgeCount" class="badge badge-due">⚡ 0 Revisions Due Today</div>
+        </div>
+      </div>
+
+      <!-- TODAY'S REVISIONS QUEUE (RUTHLESSLY FOCUSED) -->
+      <div class="card">
+        <div class="card-title">
+          <span>⚡ Today's Revisions Queue</span>
+          <span id="simulatedDateLabel" style="font-size: 11px; color: var(--accent-gold);"></span>
+        </div>
+        <div id="todayQueueContainer">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- SUBJECT READINESS -->
+      <div class="card">
+        <div class="card-title">📚 Subject Progress & Live Badges</div>
+        <div id="subjectProgressList"></div>
+      </div>
+
+      <!-- MOCK SUMMARY -->
+      <div class="card">
+        <div class="card-title">🎯 ICAI Mock Score Summary</div>
+        <div id="dashboardMockSummary"></div>
+      </div>
+
+    </div>
+
+    <!-- SYLLABUS TAB -->
+    <div id="tab-syllabus" class="tab-content">
+      
+      <!-- FILTER BAR -->
+      <div class="filter-scroll" id="paperFilterBar">
+        <button class="pill-btn active" data-paper="all">All Papers</button>
+        <button class="pill-btn" data-paper="p1">P1: Accounting</button>
+        <button class="pill-btn" data-paper="p2">P2: Business Laws</button>
+        <button class="pill-btn" data-paper="p3">P3: Quants</button>
+        <button class="pill-btn" data-paper="p4">P4: Economics</button>
+      </div>
+
+      <!-- SEARCH BAR -->
+      <div class="form-group">
+        <input type="text" id="chapterSearchInput" class="form-input" placeholder="🔍 Search chapter or notes...">
+      </div>
+
+      <!-- CHAPTER CARDS LIST -->
+      <div id="chapterListContainer"></div>
+
+    </div>
+
+    <!-- MOCK ANALYZER TAB -->
+    <div id="tab-mocks" class="tab-content">
+      
+      <!-- LOG MOCK FORM -->
+      <div class="card">
+        <div class="card-title">📝 Log Mock Test</div>
+        <form id="logMockForm">
+          <div class="form-group">
+            <label class="form-label">Test Title / Source</label>
+            <input type="text" id="mockTitleInput" class="form-input" placeholder="e.g. ICAI Mock Test Series 1" required>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div class="form-group">
+              <label class="form-label">Paper</label>
+              <select id="mockPaperSelect" class="status-select" style="width: 100%;">
+                <option value="p1">Paper 1: Accounting</option>
+                <option value="p2">Paper 2: Business Laws</option>
+                <option value="p3">Paper 3: Quantitative Aptitude</option>
+                <option value="p4">Paper 4: Business Economics</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Test Date</label>
+              <input type="date" id="mockDateInput" class="form-input" required>
+            </div>
+          </div>
+
+          <!-- ENTRY MODE TOGGLE -->
+          <div class="form-group">
+            <label class="form-label">Entry Mode</label>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="modeDetailedBtn" class="pill-btn active" style="flex:1; justify-content:center;">Detailed Breakdown</button>
+              <button type="button" id="modeQuickBtn" class="pill-btn" style="flex:1; justify-content:center;">Quick Mode (Overall Only)</button>
+            </div>
+          </div>
+
+          <!-- QUICK MODE INPUTS -->
+          <div id="quickModeInputs" style="display: none; margin-bottom: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div>
+                <label class="form-label">Total Marks / Questions</label>
+                <input type="number" id="quickTotalInput" class="form-input" min="1" max="100" value="100">
+              </div>
+              <div>
+                <label class="form-label">Obtained / Correct</label>
+                <input type="number" id="quickCorrectInput" class="form-input" min="0" max="100" value="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- DETAILED CHAPTER BREAKDOWN INPUTS -->
+          <div id="detailedModeInputs" style="margin-bottom: 12px;">
+            <label class="form-label">Chapter Breakdown (Fill only chapters that appeared)</label>
+            <div id="chapterBreakdownContainer" style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 8px;">
+              <!-- Rendered dynamically based on selected paper -->
+            </div>
+          </div>
+
+          <button type="submit" class="btn">➕ Save Mock Test Record</button>
+        </form>
+      </div>
+
+      <!-- RECOMMENDATIONS PANEL -->
+      <div class="card">
+        <div class="card-title">💡 Revision Recommendations</div>
+        <div id="recommendationsContainer"></div>
+      </div>
+
+      <!-- MOCK HISTORY LIST -->
+      <div class="card-title" style="margin: 16px 0 8px 4px;">📊 Mock Test History</div>
+      <div id="mockHistoryContainer"></div>
+
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="tab-content">
+      
+      <!-- PROFILE -->
+      <div class="card">
+        <div class="card-title">👤 Student Profile</div>
+        <div class="form-group">
+          <label class="form-label">Your Name</label>
+          <input type="text" id="settingStudentName" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Exam Date</label>
+          <input type="date" id="settingExamDate" class="form-input">
+        </div>
+      </div>
+
+      <!-- DATE SIMULATOR (DEV/TESTING TOOL) -->
+      <div class="card" style="border-color: rgba(251, 191, 36, 0.4);">
+        <div class="card-title" style="color: var(--accent-gold);">🧪 Testing Tool: Date Simulator</div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+          Simulate future dates to test revision queues and overdue penalty degradation (>7 days).
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button class="btn btn-secondary btn-sm" id="simTodayBtn">Reset Real Date</button>
+          <button class="btn btn-secondary btn-sm" id="simPlus1Btn">+1 Day (Tomorrow)</button>
+          <button class="btn btn-secondary btn-sm" id="simPlus7Btn">+7 Days</button>
+          <button class="btn btn-secondary btn-sm" id="simPlus10Btn">+10 Days (Overdue Test)</button>
+        </div>
+        <div style="font-size: 11px; margin-top: 8px; color: var(--accent-gold);" id="simStatusText">Current System Date: Real Date</div>
+      </div>
+
+      <!-- SYLLABUS MANAGER -->
+      <div class="card">
+        <div class="card-title">⚙️ Syllabus Manager</div>
+        <div class="form-group">
+          <label class="form-label">Select Paper</label>
+          <select id="managePaperSelect" class="status-select" style="width: 100%;">
+            <option value="p1">Paper 1: Accounting</option>
+            <option value="p2">Paper 2: Business Laws</option>
+            <option value="p3">Paper 3: Quants</option>
+            <option value="p4">Paper 4: Business Economics</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Chapter Title</label>
+          <input type="text" id="newChapterTitleInput" class="form-input" placeholder="Enter chapter name">
+        </div>
+        <button id="addChapterBtn" class="btn btn-secondary">➕ Add Chapter to Syllabus</button>
+      </div>
+
+      <!-- BACKUP & RESTORE -->
+      <div class="card">
+        <div class="card-title">🛡️ Data Backup & Safety</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="exportJsonBtn" class="btn btn-secondary">📥 Export Backup (JSON File)</button>
+          <label class="btn btn-secondary" style="margin: 0; cursor: pointer;">
+            📤 Import Backup (JSON File)
+            <input type="file" id="importFileInput" accept=".json" style="display: none;">
+          </label>
+          <button id="resetDataBtn" class="btn btn-danger" style="margin-top: 10px;">⚠️ Reset All Data to Default</button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="tab-dashboard">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      Dashboard
+    </button>
+    <button class="nav-btn" data-tab="tab-syllabus">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      Syllabus
+    </button>
+    <button class="nav-btn" data-tab="tab-mocks">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      Mock Analyzer
+    </button>
+    <button class="nav-btn" data-tab="tab-settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      Settings
+    </button>
+  </nav>
+
+  <!-- CHAPTER EDIT MODAL -->
+  <div id="editChapterModal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 16px;">✏️ Edit Chapter Schedule</h3>
+        <button id="closeEditModalBtn" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;">✕</button>
+      </div>
+
+      <input type="hidden" id="editModalPaperId">
+      <input type="hidden" id="editModalChapterId">
+
+      <div class="form-group">
+        <label class="form-label">Chapter Name</label>
+        <input type="text" id="editModalTitle" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Last Studied Date</label>
+        <input type="date" id="editModalLastStudied" class="form-input">
+      </div>
+
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px;">
+        *Changing last studied date recalculates next revision due date and resets difficulty history.
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button id="saveEditModalBtn" class="btn">Save & Recalculate</button>
+        <button id="cancelEditModalBtn" class="btn btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT PREVIEW MODAL -->
+  <div id="importModal" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 16px;">🔍 Import Data Preview</h3>
+        <button id="closeImportModalBtn" style="background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer;">✕</button>
+      </div>
+      <div id="importPreviewBox" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; font-size: 12px; font-family: monospace;"></div>
+      <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <button id="confirmImportBtn" class="btn">Apply & Overwrite</button>
+        <button id="cancelImportBtn" class="btn btn-secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // HARDCODED SYLLABUS DATA
+    const INITIAL_SYLLABUS = [
+      {
+        id: "p1", code: "Paper 1", name: "Accounting", color: "var(--p1-color)",
+        chapters: [
+          "Theoretical Framework", "Accounting Process", "Bank Reconciliation Statement", "Inventories",
+          "Depreciation and Amortisation", "Bills of Exchange and Promissory Notes", "Final Accounts of Sole Proprietors",
+          "Financial Statements of Not-for-Profit Organisations", "Accounts from Incomplete Records", "Partnership and LLP Accounts", "Company Accounts"
+        ]
+      },
+      {
+        id: "p2", code: "Paper 2", name: "Business Laws", color: "var(--p2-color)",
+        chapters: [
+          "Indian Regulatory Framework", "Indian Contract Act 1872", "Sale of Goods Act 1930",
+          "Indian Partnership Act 1932", "LLP Act 2008", "Companies Act 2013", "Negotiable Instruments Act 1881"
+        ]
+      },
+      {
+        id: "p3", code: "Paper 3", name: "Quantitative Aptitude", color: "var(--p3-color)",
+        chapters: [
+          "Ratio, Proportion, Indices, Logarithms", "Equations", "Linear Inequalities", "Mathematics of Finance",
+          "Permutations and Combinations", "Sequence and Series", "Sets, Relations and Functions", "Basics of Calculus",
+          "Statistical Representation of Data", "Central Tendency and Dispersion", "Probability", "Correlation and Regression", "Index Numbers"
+        ]
+      },
+      {
+        id: "p4", code: "Paper 4", name: "Business Economics", color: "var(--p4-color)",
+        chapters: [
+          "Introduction to Business Economics", "Theory of Demand and Supply", "Theory of Production and Cost",
+          "Price Determination in Different Markets", "Business Cycles"
+        ]
+      }
+    ].map(p => ({
+      ...p,
+      chapters: p.chapters.map((title, idx) => ({
+        id: `${p.id}_c${idx + 1}`,
+        title: title,
+        status: "not_started",
+        confidence: 0,
+        notes: "",
+        weightage: idx >= 4 ? "High" : "Medium",
+        lastStudiedDate: null,
+        nextRevisionDueDate: null,
+        stage: 1,
+        easyCount: 0,
+        attempts: []
+      }))
+    }));
+
+    const STORAGE_KEY = "ca_command_centre_unified_v2";
+
+    // STAGE INTERVAL DAYS: Stage 1 (+1d), Stage 2 (+3d), Stage 3 (+7d), Stage 4 (+21d), Stage 5 (+30d Mature)
+    const STAGE_INTERVALS = [1, 3, 7, 21, 30];
+
+    // STATE
+    let appState = {
+      studentName: "CA Aspirant",
+      examDate: getNextExamDate(),
+      papers: JSON.parse(JSON.stringify(INITIAL_SYLLABUS)),
+      mockTests: []
+    };
+
+    let simulatedDayOffset = 0; // For Date Simulator testing
+    let selectedPaperFilter = "all";
+    let mockEntryMode = "detailed";
+    let pendingImportData = null;
+
+    function getTodayStr() {
+      const d = new Date();
+      d.setDate(d.getDate() + simulatedDayOffset);
+      return d.toISOString().split('T')[0];
+    }
+
+    function getNextExamDate() {
+      const year = new Date().getFullYear();
+      return `${year}-11-15`;
+    }
+
+    // INIT
+    document.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      checkOverdueDegradations();
+      setupEventListeners();
+      renderAllViews();
+    });
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.papers) appState = parsed;
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function saveState(msg = "Saved ✓") {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        showToast(msg);
+      } catch (e) { console.error(e); }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    // CHECK OVERDUE >7 DAYS MEMORY DECAY DEGRADATION
+    function checkOverdueDegradations() {
+      const today = new Date(getTodayStr());
+      let stateChanged = false;
+
+      appState.papers.forEach(p => {
+        p.chapters.forEach(c => {
+          if (c.nextRevisionDueDate) {
+            const due = new Date(c.nextRevisionDueDate);
+            const diffDays = Math.floor((today - due) / (1000 * 60 * 60 * 24));
+            
+            // If overdue by > 7 days, drop stage back 1 step and reset due to today
+            if (diffDays > 7) {
+              if (c.stage > 1) c.stage = c.stage - 1;
+              c.nextRevisionDueDate = getTodayStr();
+              c.easyCount = 0;
+              stateChanged = true;
+            }
+          }
+        });
+      });
+
+      if (stateChanged) saveState("Overdue memory decay applied");
+    }
+
+    // EVENT LISTENERS
+    function setupEventListeners() {
+      // Bottom Navigation
+      document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+          document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById(btn.getAttribute("data-tab")).classList.add("active");
+          window.scrollTo(0, 0);
+        });
+      });
+
+      // Filter Pills
+      document.querySelectorAll("#paperFilterBar .pill-btn").forEach(pill => {
+        pill.addEventListener("click", () => {
+          document.querySelectorAll("#paperFilterBar .pill-btn").forEach(p => p.classList.remove("active"));
+          pill.classList.add("active");
+          selectedPaperFilter = pill.getAttribute("data-paper");
+          renderSyllabusList();
+        });
+      });
+
+      document.getElementById("chapterSearchInput").addEventListener("input", renderSyllabusList);
+
+      // Student Profile
+      const nameInp = document.getElementById("settingStudentName");
+      const dateInp = document.getElementById("settingExamDate");
+      nameInp.value = appState.studentName || "CA Aspirant";
+      dateInp.value = appState.examDate || getNextExamDate();
+      nameInp.addEventListener("change", (e) => { appState.studentName = e.target.value; saveState(); renderDashboard(); });
+      dateInp.addEventListener("change", (e) => { appState.examDate = e.target.value; saveState(); renderCountdown(); });
+
+      // Add Chapter in Settings
+      document.getElementById("addChapterBtn").addEventListener("click", () => {
+        const paperId = document.getElementById("managePaperSelect").value;
+        const title = document.getElementById("newChapterTitleInput").value.trim();
+        if (!title) return alert("Enter chapter title");
+        
+        const paper = appState.papers.find(p => p.id === paperId);
+        if (paper) {
+          paper.chapters.push({
+            id: `${paperId}_c${Date.now()}`,
+            title: title, status: "not_started", confidence: 0, notes: "", weightage: "Medium",
+            lastStudiedDate: null, nextRevisionDueDate: null, stage: 1, easyCount: 0, attempts: []
+          });
+          document.getElementById("newChapterTitleInput").value = "";
+          saveState(); renderAllViews();
+        }
+      });
+
+      // Date Simulator Controls
+      document.getElementById("simTodayBtn").addEventListener("click", () => { simulatedDayOffset = 0; updateSimStatus(); });
+      document.getElementById("simPlus1Btn").addEventListener("click", () => { simulatedDayOffset += 1; updateSimStatus(); });
+      document.getElementById("simPlus7Btn").addEventListener("click", () => { simulatedDayOffset += 7; updateSimStatus(); });
+      document.getElementById("simPlus10Btn").addEventListener("click", () => { simulatedDayOffset += 10; updateSimStatus(); });
+
+      // Mock Form Toggle
+      document.getElementById("modeDetailedBtn").addEventListener("click", () => {
+        mockEntryMode = "detailed";
+        document.getElementById("modeDetailedBtn").classList.add("active");
+        document.getElementById("modeQuickBtn").classList.remove("active");
+        document.getElementById("detailedModeInputs").style.display = "block";
+        document.getElementById("quickModeInputs").style.display = "none";
+      });
+      document.getElementById("modeQuickBtn").addEventListener("click", () => {
+        mockEntryMode = "quick";
+        document.getElementById("modeQuickBtn").classList.add("active");
+        document.getElementById("modeDetailedBtn").classList.remove("active");
+        document.getElementById("quickModeInputs").style.display = "block";
+        document.getElementById("detailedModeInputs").style.display = "none";
+      });
+
+      document.getElementById("mockPaperSelect").addEventListener("change", renderMockChapterBreakdownInputs);
+      document.getElementById("mockDateInput").value = getTodayStr();
+
+      // Log Mock Test Form Submit
+      document.getElementById("logMockForm").addEventListener("submit", handleLogMockSubmit);
+
+      // Edit Modal Actions
+      document.getElementById("closeEditModalBtn").addEventListener("click", closeEditModal);
+      document.getElementById("cancelEditModalBtn").addEventListener("click", closeEditModal);
+      document.getElementById("saveEditModalBtn").addEventListener("click", handleSaveEditModal);
+
+      // Backup JSON
+      document.getElementById("exportJsonBtn").addEventListener("click", () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState, null, 2));
+        const a = document.createElement("a"); a.href = dataStr; a.download = `ca_command_centre_backup.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+
+      document.getElementById("importFileInput").addEventListener("change", (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          try {
+            const imported = JSON.parse(evt.target.result);
+            if (!imported || !imported.papers) return alert("Invalid JSON");
+            pendingImportData = imported;
+            openImportModal(imported);
+          } catch (err) { alert("Parse error: " + err.message); }
+        };
+        reader.readAsText(file);
+      });
+
+      document.getElementById("closeImportModalBtn").addEventListener("click", closeImportModal);
+      document.getElementById("cancelImportBtn").addEventListener("click", closeImportModal);
+      document.getElementById("confirmImportBtn").addEventListener("click", () => {
+        if (pendingImportData) {
+          appState = pendingImportData; saveState("Backup restored"); renderAllViews(); closeImportModal();
+        }
+      });
+
+      document.getElementById("resetDataBtn").addEventListener("click", () => {
+        if (confirm("Reset all data to default?") && confirm("Double confirm reset?")) {
+          appState = { studentName: "CA Aspirant", examDate: getNextExamDate(), papers: JSON.parse(JSON.stringify(INITIAL_SYLLABUS)), mockTests: [] };
+          saveState(); renderAllViews();
+        }
+      });
+    }
+
+    function updateSimStatus() {
+      checkOverdueDegradations();
+      renderAllViews();
+      document.getElementById("simStatusText").textContent = `Current System Date: ${getTodayStr()} (${simulatedDayOffset >= 0 ? '+' + simulatedDayOffset : simulatedDayOffset} days)`;
+    }
+
+    function renderAllViews() {
+      renderCountdown();
+      renderDashboard();
+      renderSyllabusList();
+      renderMockChapterBreakdownInputs();
+      renderMockHistoryAndRecommendations();
+    }
+
+    function renderCountdown() {
+      const examDate = new Date(appState.examDate || getNextExamDate());
+      const today = new Date(getTodayStr());
+      const diffDays = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24));
+      document.getElementById("daysLeftNum").textContent = diffDays > 0 ? diffDays : 0;
+    }
+
+    // RENDER DASHBOARD & TODAY'S REVISIONS QUEUE
+    function renderDashboard() {
+      document.getElementById("studentGreeting").textContent = `Hello, ${appState.studentName || 'Aspirant'}! 👋`;
+      document.getElementById("simulatedDateLabel").textContent = simulatedDayOffset !== 0 ? `(Simulated: ${getTodayStr()})` : '';
+
+      let totalChapters = 0, mastered = 0, dueTodayCount = 0;
+      const todayStr = getTodayStr();
+      const todayQueue = [];
+
+      appState.papers.forEach(p => {
+        p.chapters.forEach(c => {
+          totalChapters++;
+          if (c.status === "mastered") mastered++;
+          if (c.nextRevisionDueDate && c.nextRevisionDueDate <= todayStr) {
+            dueTodayCount++;
+            todayQueue.push({ paper: p, chapter: c });
+          }
+        });
+      });
+
+      document.getElementById("totalChapterCount").textContent = totalChapters;
+      document.getElementById("masteredChapterCount").textContent = mastered;
+      document.getElementById("dueTodayBadgeCount").textContent = `⚡ ${dueTodayCount} Revisions Due Today`;
+
+      const weightedProgress = calculateOverallWeightedProgress();
+      document.getElementById("heroProgressPercent").textContent = `${weightedProgress}%`;
+      const offset = 188.4 - (weightedProgress / 100) * 188.4;
+      document.getElementById("heroRingCircle").style.strokeDashoffset = offset;
+
+      // Render Today's Revision Queue Cards
+      const queueContainer = document.getElementById("todayQueueContainer");
+      queueContainer.innerHTML = "";
+
+      if (todayQueue.length === 0) {
+        queueContainer.innerHTML = `<div class="empty-state">🎉 All caught up for today! No revisions due right now.</div>`;
+      } else {
+        // Sort: Overdue items first
+        todayQueue.sort((a, b) => a.chapter.nextRevisionDueDate.localeCompare(b.chapter.nextRevisionDueDate));
+
+        todayQueue.forEach(item => {
+          const { paper, chapter } = item;
+          const isOverdue = chapter.nextRevisionDueDate < todayStr;
+          const card = document.createElement("div");
+          card.className = "chapter-card";
+          card.style.borderColor = isOverdue ? "rgba(244,63,94,0.4)" : "rgba(56,189,248,0.3)";
+
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span class="badge ${isOverdue ? 'badge-overdue' : 'badge-due'}">${isOverdue ? '🔴 Overdue' : '⚡ Due Today'}</span>
+                <span style="font-size:11px; color:${paper.color}; font-weight:700; margin-left:4px;">${paper.code}</span>
+                <div style="font-size:14px; font-weight:700; margin-top:4px;">${escapeHtml(chapter.title)}</div>
+              </div>
+              <span class="badge badge-stage">Stage ${chapter.stage} (+${STAGE_INTERVALS[chapter.stage - 1]}d)</span>
+            </div>
+
+            <div class="rev-btn-group">
+              <button class="rev-btn rev-btn-easy" data-paper="${paper.id}" data-ch="${chapter.id}" data-action="easy">⚡ Easy (+Next)</button>
+              <button class="rev-btn rev-btn-ok" data-paper="${paper.id}" data-ch="${chapter.id}" data-action="ok">👍 OK (Advance)</button>
+              <button class="rev-btn rev-btn-hard" data-paper="${paper.id}" data-ch="${chapter.id}" data-action="hard">🔴 Hard (Repeat)</button>
+            </div>
+          `;
+          queueContainer.appendChild(card);
+        });
+
+        // Bind Queue Revision Buttons
+        queueContainer.querySelectorAll(".rev-btn").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            const paperId = btn.getAttribute("data-paper");
+            const chId = btn.getAttribute("data-ch");
+            const action = btn.getAttribute("data-action");
+            processRevisionAction(paperId, chId, action);
+          });
+        });
+      }
+
+      // Subject Progress List
+      const subjContainer = document.getElementById("subjectProgressList");
+      subjContainer.innerHTML = "";
+      appState.papers.forEach(p => {
+        const pTotal = p.chapters.length;
+        const pMastered = p.chapters.filter(c => c.status === "mastered").length;
+        const pPercent = pTotal > 0 ? Math.round((pMastered / pTotal) * 100) : 0;
+        
+        const dueInPaper = p.chapters.filter(c => c.nextRevisionDueDate && c.nextRevisionDueDate <= todayStr).length;
+
+        const div = document.createElement("div");
+        div.style.marginBottom = "10px";
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600; margin-bottom:4px;">
+            <span>${p.code}: ${p.name} ${dueInPaper > 0 ? `<span class="badge badge-due" style="font-size:10px; padding:1px 5px;">${dueInPaper} due</span>` : ''}</span>
+            <span style="color:${p.color}">${pPercent}%</span>
+          </div>
+          <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden;">
+            <div style="height:100%; width:${pPercent}%; background:${p.color}; border-radius:3px;"></div>
+          </div>
+        `;
+        subjContainer.appendChild(div);
+      });
+
+      // Mock Analytics Summary
+      const mockSummary = document.getElementById("dashboardMockSummary");
+      if (!appState.mockTests || appState.mockTests.length === 0) {
+        mockSummary.innerHTML = `<div class="empty-state">No mock tests logged yet. Head to "Mock Analyzer" tab to record scores!</div>`;
+      } else {
+        const latest = appState.mockTests[0];
+        mockSummary.innerHTML = `
+          <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:8px; font-size:12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <b>Latest: ${escapeHtml(latest.title)}</b>
+              <span style="color:var(--text-muted);">${latest.date}</span>
+            </div>
+            <div>Score: <b>${latest.obtainedMarks} / ${latest.totalMarks}</b> (${((latest.obtainedMarks/latest.totalMarks)*100).toFixed(1)}%)</div>
+          </div>
+        `;
+      }
+    }
+
+    // PROCESS REVISION BUTTON CLICK (EASY / OK / HARD)
+    function processRevisionAction(paperId, chId, action) {
+      const chapter = findChapter(paperId, chId);
+      if (!chapter) return;
+
+      const today = new Date(getTodayStr());
+
+      if (action === "hard") {
+        // Repeat same stage interval
+        const daysToAdd = STAGE_INTERVALS[chapter.stage - 1];
+        today.setDate(today.getDate() + daysToAdd);
+        chapter.nextRevisionDueDate = today.toISOString().split('T')[0];
+        chapter.easyCount = 0;
+      } else if (action === "ok") {
+        // Advance 1 stage level
+        if (chapter.stage < STAGE_INTERVALS.length) chapter.stage += 1;
+        const daysToAdd = STAGE_INTERVALS[chapter.stage - 1];
+        today.setDate(today.getDate() + daysToAdd);
+        chapter.nextRevisionDueDate = today.toISOString().split('T')[0];
+        chapter.easyCount = 0;
+        if (chapter.status === "not_started") chapter.status = "in_progress";
+      } else if (action === "easy") {
+        // Easy rating: increment easyCount. If easyCount === 2, skip 1 extra stage ahead!
+        chapter.easyCount = (chapter.easyCount || 0) + 1;
+        if (chapter.easyCount >= 2) {
+          chapter.stage = Math.min(STAGE_INTERVALS.length, chapter.stage + 2);
+          chapter.easyCount = 0;
+        } else {
+          chapter.stage = Math.min(STAGE_INTERVALS.length, chapter.stage + 1);
+        }
+        const daysToAdd = STAGE_INTERVALS[chapter.stage - 1];
+        today.setDate(today.getDate() + daysToAdd);
+        chapter.nextRevisionDueDate = today.toISOString().split('T')[0];
+        if (chapter.status === "not_started") chapter.status = "in_progress";
+      }
+
+      chapter.lastStudiedDate = getTodayStr();
+      saveState("Revision completed! Schedule updated.");
+      renderAllViews();
+    }
+
+    // RENDER SYLLABUS LIST
+    function renderSyllabusList() {
+      const container = document.getElementById("chapterListContainer");
+      const searchQuery = document.getElementById("chapterSearchInput").value.toLowerCase().trim();
+      const todayStr = getTodayStr();
+      container.innerHTML = "";
+
+      appState.papers.forEach(paper => {
+        if (selectedPaperFilter !== "all" && paper.id !== selectedPaperFilter) return;
+
+        const filtered = paper.chapters.filter(ch => ch.title.toLowerCase().includes(searchQuery) || ch.notes.toLowerCase().includes(searchQuery));
+
+        filtered.forEach(chapter => {
+          const card = document.createElement("div");
+          card.className = "chapter-card";
+
+          const isDue = chapter.nextRevisionDueDate && chapter.nextRevisionDueDate <= todayStr;
+          const isOverdue = chapter.nextRevisionDueDate && chapter.nextRevisionDueDate < todayStr;
+
+          const starsHtml = [1, 2, 3, 4, 5].map(star => `
+            <svg class="star-icon ${star <= chapter.confidence ? 'filled' : ''}" data-star="${star}" viewBox="0 0 24 24">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+          `).join("");
+
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <span class="badge" style="background:rgba(255,255,255,0.08); color:${paper.color}">${paper.code}</span>
+                ${isDue ? `<span class="badge ${isOverdue ? 'badge-overdue' : 'badge-due'}">${isOverdue ? '🔴 Overdue' : '⚡ Due Today'}</span>` : ''}
+                <div style="font-size:14px; font-weight:700; margin-top:4px;">${escapeHtml(chapter.title)}</div>
+              </div>
+              <button class="edit-sch-btn btn btn-secondary btn-sm" data-paper="${paper.id}" data-ch="${chapter.id}">✏️ Edit</button>
+            </div>
+
+            <div style="font-size:11px; color:var(--text-muted); margin-top:6px; display:flex; gap:12px;">
+              <span>Stage ${chapter.stage} (+${STAGE_INTERVALS[chapter.stage - 1]}d)</span>
+              <span>Next Due: <b>${chapter.nextRevisionDueDate || 'Not set'}</b></span>
+            </div>
+
+            <div class="chapter-controls">
+              <select class="status-select" data-paper="${paper.id}" data-ch="${chapter.id}">
+                <option value="not_started" ${chapter.status === 'not_started' ? 'selected' : ''}>🔴 Not Started</option>
+                <option value="in_progress" ${chapter.status === 'in_progress' ? 'selected' : ''}>🔵 In Progress</option>
+                <option value="revised_1" ${chapter.status === 'revised_1' ? 'selected' : ''}>🟡 Revised 1x</option>
+                <option value="revised_2" ${chapter.status === 'revised_2' ? 'selected' : ''}>🟣 Revised 2x</option>
+                <option value="mastered" ${chapter.status === 'mastered' ? 'selected' : ''}>🟢 Mastered</option>
+              </select>
+
+              <div class="star-rating" data-paper="${paper.id}" data-ch="${chapter.id}">${starsHtml}</div>
+              <button class="notes-toggle" data-ch="${chapter.id}">📝 Notes ${chapter.notes ? '✓' : ''}</button>
+            </div>
+
+            <div class="notes-box" id="notes_box_${chapter.id}">
+              <textarea class="notes-textarea" data-paper="${paper.id}" data-ch="${chapter.id}" placeholder="Add revision notes...">${escapeHtml(chapter.notes || '')}</textarea>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      });
+
+      bindSyllabusCardEvents();
+    }
+
+    function bindSyllabusCardEvents() {
+      // Edit Schedule Button Click
+      document.querySelectorAll(".edit-sch-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const paperId = btn.getAttribute("data-paper");
+          const chId = btn.getAttribute("data-ch");
+          const chapter = findChapter(paperId, chId);
+          if (chapter) openEditModal(paperId, chapter);
+        });
+      });
+
+      // Status Change
+      document.querySelectorAll(".status-select").forEach(sel => {
+        sel.addEventListener("change", (e) => {
+          const chapter = findChapter(sel.getAttribute("data-paper"), sel.getAttribute("data-ch"));
+          if (chapter) { chapter.status = e.target.value; saveState(); renderDashboard(); }
+        });
+      });
+
+      // Star Ratings
+      document.querySelectorAll(".star-rating").forEach(div => {
+        div.addEventListener("click", (e) => {
+          const star = e.target.closest(".star-icon"); if (!star) return;
+          const val = parseInt(star.getAttribute("data-star"));
+          const chapter = findChapter(div.getAttribute("data-paper"), div.getAttribute("data-ch"));
+          if (chapter) { chapter.confidence = chapter.confidence === val ? 0 : val; saveState(); renderSyllabusList(); }
+        });
+      });
+
+      // Notes Toggle & Blur
+      document.querySelectorAll(".notes-toggle").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const box = document.getElementById(`notes_box_${btn.getAttribute("data-ch")}`);
+          box.classList.toggle("open");
+        });
+      });
+      document.querySelectorAll(".notes-textarea").forEach(area => {
+        area.addEventListener("change", (e) => {
+          const chapter = findChapter(area.getAttribute("data-paper"), area.getAttribute("data-ch"));
+          if (chapter) { chapter.notes = e.target.value; saveState(); }
+        });
+      });
+    }
+
+    // EDIT MODAL CONTROLS
+    function openEditModal(paperId, chapter) {
+      document.getElementById("editModalPaperId").value = paperId;
+      document.getElementById("editModalChapterId").value = chapter.id;
+      document.getElementById("editModalTitle").value = chapter.title;
+      document.getElementById("editModalLastStudied").value = chapter.lastStudiedDate || getTodayStr();
+      document.getElementById("editChapterModal").classList.add("active");
+    }
+    function closeEditModal() { document.getElementById("editChapterModal").classList.remove("active"); }
+
+    function handleSaveEditModal() {
+      const paperId = document.getElementById("editModalPaperId").value;
+      const chId = document.getElementById("editModalChapterId").value;
+      const newTitle = document.getElementById("editModalTitle").value.trim();
+      const lastStudied = document.getElementById("editModalLastStudied").value;
+
+      const chapter = findChapter(paperId, chId);
+      if (chapter && newTitle && lastStudied) {
+        chapter.title = newTitle;
+        chapter.lastStudiedDate = lastStudied;
+        
+        // Recalculate next revision due date from lastStudiedDate + stage interval
+        const d = new Date(lastStudied);
+        const days = STAGE_INTERVALS[chapter.stage - 1];
+        d.setDate(d.getDate() + days);
+        chapter.nextRevisionDueDate = d.toISOString().split('T')[0];
+        chapter.easyCount = 0;
+
+        saveState("Schedule recalculated");
+        closeEditModal();
+        renderAllViews();
+      }
+    }
+
+    // RENDER MOCK BREAKDOWN INPUTS & HISTORY
+    function renderMockChapterBreakdownInputs() {
+      const paperId = document.getElementById("mockPaperSelect").value;
+      const container = document.getElementById("chapterBreakdownContainer");
+      const paper = appState.papers.find(p => p.id === paperId);
+      container.innerHTML = "";
+
+      if (!paper) return;
+
+      paper.chapters.forEach(ch => {
+        const row = document.createElement("div");
+        row.className = "chapter-breakdown-row";
+        row.innerHTML = `
+          <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(ch.title)}</div>
+          <div><input type="number" class="form-input mock-ch-total" data-ch="${ch.id}" min="0" placeholder="Questions" style="min-height:34px; padding:4px 6px;"></div>
+          <div><input type="number" class="form-input mock-ch-correct" data-ch="${ch.id}" min="0" placeholder="Correct" style="min-height:34px; padding:4px 6px;"></div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function handleLogMockSubmit(e) {
+      e.preventDefault();
+      const title = document.getElementById("mockTitleInput").value.trim();
+      const paperId = document.getElementById("mockPaperSelect").value;
+      const date = document.getElementById("mockDateInput").value;
+      const paper = appState.papers.find(p => p.id === paperId);
+
+      const testId = `mock_${Date.now()}`;
+      let totalMarks = 0, obtainedMarks = 0;
+
+      if (mockEntryMode === "quick") {
+        totalMarks = parseInt(document.getElementById("quickTotalInput").value) || 100;
+        obtainedMarks = parseInt(document.getElementById("quickCorrectInput").value) || 0;
+      } else {
+        // Detailed mode: loop over chapter breakdown inputs
+        document.querySelectorAll(".mock-ch-total").forEach(input => {
+          const chId = input.getAttribute("data-ch");
+          const totalQ = parseInt(input.value) || 0;
+          const correctInp = document.querySelector(`.mock-ch-correct[data-ch="${chId}"]`);
+          const correctQ = parseInt(correctInp ? correctInp.value : 0) || 0;
+
+          if (totalQ > 0) {
+            totalMarks += totalQ;
+            obtainedMarks += correctQ;
+
+            // Push attempt into chapter record
+            const chapter = paper.chapters.find(c => c.id === chId);
+            if (chapter) {
+              if (!chapter.attempts) chapter.attempts = [];
+              chapter.attempts.push({ date, testId, total: totalQ, correct: correctQ });
+            }
+          }
+        });
+
+        if (totalMarks === 0) {
+          totalMarks = 100;
+        }
+      }
+
+      appState.mockTests.unshift({
+        id: testId, title, paperId, date, mode: mockEntryMode, totalMarks, obtainedMarks
+      });
+
+      saveState("Mock test saved!");
+      document.getElementById("logMockForm").reset();
+      document.getElementById("mockDateInput").value = getTodayStr();
+      renderAllViews();
+    }
+
+    function renderMockHistoryAndRecommendations() {
+      const historyContainer = document.getElementById("mockHistoryContainer");
+      const recContainer = document.getElementById("recommendationsContainer");
+      historyContainer.innerHTML = "";
+      recContainer.innerHTML = "";
+
+      // Render Recommendations
+      const weakChapters = [];
+      appState.papers.forEach(p => {
+        p.chapters.forEach(c => {
+          if (c.attempts && c.attempts.length > 0) {
+            let totalQ = 0, correctQ = 0;
+            c.attempts.forEach(a => { totalQ += a.total; correctQ += a.correct; });
+            const acc = Math.round((correctQ / totalQ) * 100);
+            if (acc < 65) weakChapters.push({ paper: p, chapter: c, accuracy: acc });
+          }
+        });
+      });
+
+      if (weakChapters.length === 0) {
+        recContainer.innerHTML = `<div class="empty-state">No weak chapter alerts. Log detailed mock tests to discover accuracy insights!</div>`;
+      } else {
+        weakChapters.forEach(item => {
+          const div = document.createElement("div");
+          div.style.cssText = "background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); padding:8px 12px; border-radius:8px; margin-bottom:8px; font-size:12px;";
+          div.innerHTML = `⚠️ <b>${item.paper.code}: ${escapeHtml(item.chapter.title)}</b> — Accuracy is only <b style="color:var(--accent-danger);">${item.accuracy}%</b>. Schedule extra revision!`;
+          recContainer.appendChild(div);
+        });
+      }
+
+      // Render History
+      if (!appState.mockTests || appState.mockTests.length === 0) {
+        historyContainer.innerHTML = `<div class="empty-state">No mock tests logged yet.</div>`;
+        return;
+      }
+
+      appState.mockTests.forEach(test => {
+        const pct = ((test.obtainedMarks / test.totalMarks) * 100).toFixed(1);
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <b>${escapeHtml(test.title)}</b>
+            <span style="font-size:11px; color:var(--text-muted);">${test.date}</span>
+          </div>
+          <div style="font-size:12px;">Score: <b style="color:var(--p1-color);">${test.obtainedMarks} / ${test.totalMarks}</b> (${pct}%)</div>
+        `;
+        historyContainer.appendChild(card);
+      });
+    }
+
+    // HELPER MATH
+    function findChapter(paperId, chId) {
+      const paper = appState.papers.find(p => p.id === paperId);
+      return paper ? paper.chapters.find(c => c.id === chId) : null;
+    }
+
+    function calculateOverallWeightedProgress() {
+      let total = 0, earned = 0;
+      appState.papers.forEach(p => {
+        p.chapters.forEach(c => {
+          total += 1;
+          if (c.status === "mastered") earned += 1;
+          else if (c.status === "revised_2") earned += 0.8;
+          else if (c.status === "revised_1") earned += 0.6;
+          else if (c.status === "in_progress") earned += 0.3;
+        });
+      });
+      return total === 0 ? 0 : Math.round((earned / total) * 100);
+    }
+
+    function openImportModal(imported) {
+      document.getElementById("importPreviewBox").textContent = JSON.stringify({
+        student: imported.studentName,
+        examDate: imported.examDate,
+        papersCount: imported.papers ? imported.papers.length : 0,
+        mocksCount: imported.mockTests ? imported.mockTests.length : 0
+      }, null, 2);
+      document.getElementById("importModal").classList.add("active");
+    }
+    function closeImportModal() { document.getElementById("importModal").classList.remove("active"); }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>
